@@ -2,11 +2,15 @@ import { Resend } from "resend";
 import { buildEmailBody } from "@/lib/buildEmailBody";
 import type { FormData } from "@/app/page";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: Request) {
   try {
     const data: FormData = await request.json();
+
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return Response.json({ error: "RESEND_API_KEY não configurado" }, { status: 500 });
+    }
+    const resend = new Resend(apiKey);
 
     const subject = `Novo briefing de LP — ${data.projectName} (respondido por ${data.responderName})`;
     const body = buildEmailBody(data);
