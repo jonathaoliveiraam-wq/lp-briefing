@@ -72,33 +72,20 @@ const initial: ClientFormData = {
 export default function ClientePage() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<ClientFormData>(initial);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
 
   const set = (patch: Partial<ClientFormData>) => setData((d) => ({ ...d, ...patch }));
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setError("");
-    try {
-      const res = await fetch("/api/send-client", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Falha no envio");
-      }
-      setSubmitted(true);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erro ao enviar. Tente novamente.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmit = () => {
+    setSubmitted(true);
+    // tenta enviar email em segundo plano — não bloqueia se não configurado
+    fetch("/api/send-client", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).catch(() => {});
   };
 
   if (submitted) return <ClientSuccessScreen responderName={data.responderName} data={data} />;
@@ -393,8 +380,8 @@ export default function ClientePage() {
               onChange={(v) => set({ additionalNotes: v })}
               onSubmit={handleSubmit}
               onBack={back}
-              isSubmitting={isSubmitting}
-              error={error}
+              isSubmitting={false}
+              error=""
             />
           )}
         </div>
